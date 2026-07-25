@@ -1,9 +1,7 @@
 from pydantic import SecretStr
 from langchain_groq import ChatGroq
-# from langchain_openai import OpenAIEmbeddings
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
-# from db.dbConnection import get_collection
 import os
 load_dotenv()
 
@@ -38,90 +36,3 @@ def embed_query(text: str) -> list[float]:
     prefixed = f"search_query: {text}"
     embedding = model.encode(prefixed, normalize_embeddings=True)
     return embedding.tolist()
-
-# def searchSimilarMessages(query: str, limit: int = 5) -> list:
-#     msg_collection = get_collection("messages")
-
-#     # Query prefix for searching
-#     query_embedding = embed_query(query)
-
-#     results = msg_collection.aggregate([
-#         {
-#             "$vectorSearch": {
-#                 "index": "message_vector_index",
-#                 "path": "embedding",
-#                 "queryVector": query_embedding,
-#                 "numCandidates": 50,
-#                 "limit": limit
-#             }
-#         },
-#         {
-#             "$project": {
-#                 "content": 1,
-#                 "sender_id": 1,
-#                 "score": {"$meta": "vectorSearchScore"}
-#             }
-#         }
-#     ])
-
-#     return list(results)
-
-# print(len(embed_document("Hello I am going to park?")))
-
-
-# llm=get_groq_llm()
-
-# messages = [
-#     (
-#         "system",
-#         "You are a helpful assistant that translates English to japanese. Translate the user sentence.",
-#     ),
-#     ("human", "I hate you."),
-# ]
-# ai_msg = llm.invoke(messages)
-# print(ai_msg.content)
-
-
-# print(os.getenv("VERCEL_AI_KEY",""))
-# embedder = OpenAIEmbeddings(
-#     model="text-embedding-3-small",
-#     api_key=vercel_api_key,
-#     base_url="https://ai-gateway.vercel.sh/v1",
-#     dimensions=1536  
-# )
-
-# def embed_document(text: str) -> list[float]:
-#     # Clean text before embedding
-#     text = text.strip()
-#     if not text:
-#         raise ValueError("Cannot embed empty text")
-#     return embedder.embed_documents([text])[0]
-
-# def embed_query(text: str) -> list[float]:
-#     text = text.strip()
-#     if not text:
-#         raise ValueError("Cannot embed empty query")
-#     return embedder.embed_query(text)
-
-
-
-
-# vercel_api_key=SecretStr(os.getenv("VERCEL_AI_KEY",""))
-
-# client = OpenAI(
-#     api_key=os.getenv("VERCEL_AI_KEY",""),
-#     base_url="https://ai-gateway.vercel.sh/v1"
-# )
-
-# response = client.embeddings.create(
-#     model="text-embedding-3-small",
-#     input="test message"
-# )
-# print(response.data[0].embedding[:5])
-
-# # Test 2 — with provider prefix if above fails
-# response = client.embeddings.create(
-#     model="openai/text-embedding-3-small",
-#     input="test message"
-# )
-# print(response.data[0].embedding[:5])

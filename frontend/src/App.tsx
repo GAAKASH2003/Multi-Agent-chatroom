@@ -4,8 +4,8 @@ import { Sidebar } from "./components/Sidebar";
 import { ChatView } from "./components/ChatView";
 import { ManageModal } from "./components/ManageModal";
 import { useStore } from "./lib/store";
-import {Group,Character} from "./lib/types";
-import { Toaster } from './components/ui/sonner';
+import { Group, Character } from "./lib/types";
+import { Toaster } from "./components/ui/sonner";
 
 function App() {
   const store = useStore();
@@ -15,7 +15,7 @@ function App() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [editGroup, setEditGroup] = useState<Group | null>(null);
   const [editCharacter, setEditCharacter] = useState<Character | null>(null);
-  
+
   const token =
     typeof window !== "undefined"
       ? (localStorage.getItem("auth_token") ?? "")
@@ -30,7 +30,6 @@ function App() {
   const activeGroup = store.groups.find(
     (g) => g.id === activeGroupId || g.id === activeSession?.groupId,
   );
-  
 
   const handleSelectSession = async (sessionId: string, groupId: string) => {
     setActiveSessionId(sessionId);
@@ -49,9 +48,9 @@ function App() {
   };
 
   const handleEditGroup = (group: Group) => {
-      setEditGroup(group);
-      setManageOpen(true);
-  }
+    setEditGroup(group);
+    setManageOpen(true);
+  };
 
   return (
     <div className="h-screen w-screen flex overflow-hidden">
@@ -135,28 +134,36 @@ function App() {
             onEditGroup={(g) => {
               handleEditGroup(g);
             }}
-
+             onEditCharacter={(character) => {
+              setEditCharacter(character);
+              setManageOpen(true);
+            }}
           />
         </div>
       </div>
 
-      <ManageModal
-        open={manageOpen}
-        onOpenChange={setManageOpen}
-        groups={store.groups}
-        characters={store.characters}
-        onAddGroup={store.addGroup}
-        onUpdateGroup={store.updateGroup}
-        onDeleteGroup={store.deleteGroup}
-        onAddCharacter={store.addCharacter}
-        onUpdateCharacter={store.updateCharacter}
-        onDeleteCharacter={store.deleteCharacter}
-        onEditConsumed={() => {
-          setEditGroup(null);
+      {manageOpen && (
+        <ManageModal
+          open={manageOpen}
+          onOpenChange={setManageOpen}
+          groups={store.groups}
+          characters={store.characters}
+          onAddGroup={store.addGroup}
+          onUpdateGroup={store.updateGroup}
+          onDeleteGroup={store.deleteGroup}
+          onAddCharacter={store.addCharacter}
+          onUpdateCharacter={store.updateCharacter}
+          onDeleteCharacter={store.deleteCharacter}
+          editGroup={editGroup}
+          editCharacter={editCharacter}
+         onEditConsumed={() => {
+            setEditGroup(null);
+            setEditCharacter(null);
         }}
-        scopeGroupId={activeGroupId}
-      />
-       <Toaster position="bottom-right" richColors closeButton />
+          scopeGroupId={activeGroupId}
+        />
+      )}
+      <Toaster position="bottom-right" richColors closeButton />
     </div>
   );
 }

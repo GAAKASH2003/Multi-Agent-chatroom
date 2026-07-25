@@ -22,6 +22,7 @@ interface ChatViewProps {
   streamingIds: string[];
   onSend: (sessionId: string, content: string) => void;
   onEditGroup: (group: Group) => void;
+  onEditCharacter: (character: Character) => void;
   token: string;
 }
 
@@ -98,10 +99,12 @@ function MessageBubble({
   msg,
   charById,
   streamingIds,
+  onEditCharacter
 }: {
   msg: Message;
   charById: (id: string | null) => Character | undefined;
   streamingIds: string[];
+  onEditCharacter: (character: Character) => void;
 }) {
   const isUser = msg.role === "user";
   const character = charById(msg.characterId ?? null);
@@ -114,7 +117,10 @@ function MessageBubble({
       className={`flex items-end gap-2 animate-fade-in-up ${isUser ? "justify-start" : "justify-end"}`}
     >
       {!isUser && (
-        <Avatar className={`h-8 w-8 shrink-0 ring-2 ${cc.ring}`}>
+        <Avatar
+          className={`h-8 w-8 shrink-0 ring-2 ${cc.ring} cursor-pointer hover:scale-110 transition-transform`}
+          onClick={() => character && onEditCharacter(character)}
+        >
           <AvatarImage src={character?.avatar} />
           <AvatarFallback className={`text-[10px] ${cc.text} bg-background`}>
             {(character?.name ?? "??").slice(0, 2).toUpperCase()}
@@ -125,9 +131,13 @@ function MessageBubble({
         className={`max-w-[75%] flex flex-col gap-1 ${isUser ? "items-end" : "items-start"}`}
       >
         {!isUser && character && (
-          <span className={`text-xs font-medium ${cc.text} px-1`}>
-            {character.name}
-          </span>
+         <button
+          type="button"
+          className={`text-xs font-medium ${cc.text} px-1 hover:underline text-left`}
+          onClick={() => onEditCharacter(character)}
+        >
+          {character.name}
+        </button>
         )}
         <div
           className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed border ${
@@ -157,11 +167,13 @@ function TurnBlock({
   isLast,
   charById,
   streamingIds,
+  onEditCharacter
 }: {
   turn: ConvTurn;
   isLast: boolean;
   charById: (id: string | null) => Character | undefined;
   streamingIds: string[];
+  onEditCharacter: (character: Character) => void;
 }) {
   const isPending = turn.conv_id.startsWith("pending-");
   const pendingQueryId = `${turn.conv_id}-query`;
@@ -172,6 +184,7 @@ function TurnBlock({
         msg={turn.query}
         charById={charById}
         streamingIds={streamingIds}
+        onEditCharacter={onEditCharacter}
       />
 
       {/* Lightweight loading indicator for pending turns */}
@@ -193,6 +206,7 @@ function TurnBlock({
               msg={msg}
               charById={charById}
               streamingIds={streamingIds}
+              onEditCharacter={onEditCharacter}
             />
           ))}
         </div>
@@ -218,6 +232,7 @@ export function ChatView({
   onSend,
   token,
   onEditGroup,
+  onEditCharacter
 }: ChatViewProps) {
   const [input, setInput] = useState("");
   const [historyTurns, setHistoryTurns] = useState<ConvTurn[]>([]);
@@ -266,10 +281,12 @@ export function ChatView({
   );
 
   // Auto scroll
-  useEffect(() => {
-    if (scrollRef.current)
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [allTurns.length, streamingIds.length]);
+useEffect(() => {
+    scrollRef.current?.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+    });
+}, [allTurns]);
 
   const charById = (id: string | null) =>
     id ? characters.find((c) => c.id === id) : undefined;
@@ -304,18 +321,18 @@ export function ChatView({
   return (
     <div className="flex-1 flex flex-col chat-bg overflow-hidden">
       {/* Header */}
-      <div className="glass border-b border-border px-4 py-3 flex items-center gap-3 shrink-0">
+      <div className="glass border-b border-border px-4 py-3 flex items-center gap-3 shrink-0 ">
         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
           <Users className="h-5 w-5 text-primary" />
         </div>
         <div
-          className="flex-1 min-w-0"
+          className="flex-1 min-w-0 cursor-pointer"
           onClick={() => group && onEditGroup(group)}
         >
           <h2 className="font-semibold truncate">{session.title}</h2>
           <p className="text-xs text-muted-foreground truncate">
             {group?.name} · {group?.characterIds.length} member
-            {characters.length !== 1 ? "s" : ""}
+            {group?.characterIds.length !== 1 ? "s" : ""}
           </p>
         </div>
         {/* <div className="flex -space-x-2">
@@ -371,6 +388,7 @@ export function ChatView({
                 isLast={ti === allTurns.length - 1}
                 charById={charById}
                 streamingIds={streamingIds}
+                onEditCharacter={onEditCharacter}
               />
             ))}
           </div>

@@ -26,7 +26,7 @@ interface ManageModalProps {
   onAddGroup: (name: string, description: string, characterIds: string[]) => void;
   onUpdateGroup: (id: string, name: string, description: string, characterIds: string[]) => Promise<{ success: boolean; error?: string;detail?: string }>;
   onDeleteGroup: (id: string) => void;
-  onAddCharacter: (name: string, persona: string, color: Character['color'], traits: string[]) => void;
+  onAddCharacter: (name: string, persona: string, color: Character['color'], traits: string[]) => Promise<Character>;
   onUpdateCharacter: (id: string, name: string, persona: string, color: Character['color'], traits: string[]) => void;
   onDeleteCharacter: (id: string) => void;
   editGroup?: Group | null;
@@ -91,7 +91,13 @@ export function ManageModal({
   const scopedCharacters = isScoped
     ? characters.filter((c) => scopedCharacterIds.includes(c.id))
     : characters;
+  const visibleGroups = isScoped
+  ? scopedGroup
+    ? [scopedGroup]
+    : []
+  : groups;
 
+  const visibleCharacters = scopedCharacters;
   useEffect(() => {
     if (!open) {
       resetGroupForm();
@@ -114,6 +120,17 @@ export function ManageModal({
       onEditConsumed?.();
     }
   }, [editCharacter, open]);
+
+  useEffect(() => {
+    if (
+      open &&
+      isScoped &&
+      scopedGroup &&
+      !editingGroupId
+    ) {
+      startEditGroup(scopedGroup);
+    }
+}, [open, isScoped, scopedGroup]);
 
   const resetGroupForm = () => {
     setGName('');
@@ -154,6 +171,10 @@ export function ManageModal({
     }
     if (editingGroupId) {
        const result = await onUpdateGroup(editingGroupId, gName.trim(), gDesc.trim(), gChars);
+       if (!result.success) {
+          toast.error(result.error ?? "Failed");
+          return;
+       }
     } else {
       onAddGroup(gName.trim(), gDesc.trim(), gChars);
     }
@@ -181,23 +202,45 @@ export function ManageModal({
     setCTraitInput('');
   };
 
-  const submitCharacter = () => {
-    if (!cName.trim()) return;
-    if (editingCharId) {
-      onUpdateCharacter(editingCharId, cName.trim(), cPersona.trim(), cColor, cTraits);
-    } else {
-      // onAddCharacter(cName.trim(), cPersona.trim(), cColor, cTraits);
-            const newChar = onAddCharacter(cName.trim(), cPersona.trim(), cColor, cTraits);
-      if (isScoped && scopedGroup && newChar) {
-        onUpdateGroup(
-          scopedGroup.id,
-          scopedGroup.name,
-          scopedGroup.description,
-          [...scopedGroup.characterIds, newChar.id]
-        );
+ const submitCharacter = async () => {
+  if (!cName.trim() || !cPersona.trim()) return;
+  
+  if (editingCharId) {
+    if (scopedGroup?.grpType === "seed") {
+       toast.error("Cannot edit characters in seed group",{ description: 'You cannot edit characters in a seed group.' })
     }
-    resetCharForm();
-  };
+    onUpdateCharacter(
+      editingCharId,
+      cName.trim(),
+      cPersona.trim(),
+      cColor,
+      cTraits
+    );
+  } else {
+    if (scopedGroup?.grpType==="seed"){
+      toast.error("Cannot add character to seed group",{ description: 'You cannot add characters to a seed group.' })
+      return;
+    }
+    const newChar = await onAddCharacter(
+      cName.trim(),
+      cPersona.trim(),
+      cColor,
+      cTraits
+    );
+
+    if (isScoped && scopedGroup) {
+      await onUpdateGroup(
+        scopedGroup.id,
+        scopedGroup.name,
+        scopedGroup.description,
+        [...new Set([...scopedGroup.characterIds, newChar.id])]
+      );
+    }
+  }
+
+  resetCharForm();
+  onOpenChange(false); // Close the modal after submission
+};
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -206,7 +249,11 @@ export function ManageModal({
       </DialogTrigger>
       <DialogContent className="glass max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Manage groups & characters</DialogTitle>
+          <DialogTitle>
+              {isScoped
+                  ? `Manage ${scopedGroup?.name}`
+                  : "Manage groups & characters"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="flex gap-2 border-b border-border pb-3">
@@ -233,8 +280,8 @@ export function ManageModal({
             <div className="space-y-6">
               {/* Existing groups */}
               <div className="space-y-2">
-                {groups.length === 0 && <p className="text-sm text-muted-foreground">No groups yet.</p>}
-                {groups.map((g) => (
+                {visibleGroups.length === 0 && <p className="text-sm text-muted-foreground">No groups yet.</p>}
+               {(isScoped ? [scopedGroup!] : groups).map((g) => (
                   <div key={g.id} className="glass rounded-lg p-3 flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-sm">{g.name}</p>
@@ -244,7 +291,14 @@ export function ManageModal({
                           const c = characters.find((x) => x.id === id);
                           if (!c) return null;
                           return (
-                            <Avatar key={id} className="h-6 w-6 ring-2 ring-background">
+                            <Avatar
+                                key={id}
+                                className="h-6 w-6 ring-2 ring-background cursor-pointer hover:scale-110 transition-transform"
+                                onClick={() => {
+                                  setTab("characters");
+                                  startEditCharacter(c);
+                                }}
+                            >
                               <AvatarImage src={c.avatar} />
                               <AvatarFallback className={`text-[9px] ${colorText[c.color]} bg-background`}>
                                 {c.name.slice(0, 2).toUpperCase()}
@@ -255,7 +309,7 @@ export function ManageModal({
                       </div>
                     </div>
                     
-                      {g.grpType !== "seed" && (
+                      {!isScoped && g.grpType !== "seed" && (
               <div className="flex gap-1 shrink-0">
                 <Button
                   variant="ghost"
@@ -281,9 +335,14 @@ export function ManageModal({
               </div>
 
               {/* New / edit group form */}
+              {(!isScoped || editingGroupId) && (scopedGroup?.grpType!=="seed") && (
               <div className="glass rounded-lg p-4 space-y-3 border border-primary/30">
                 <h3 className="text-sm font-semibold text-primary">
-                  {editingGroupId ? 'Edit group' : 'Create new group'}
+                    {editingGroupId
+                      ? "Edit group"
+                      : isScoped
+                        ? "Group details"
+                        : "Create new group"}
                 </h3>
                 <div className="space-y-1.5">
                   <Label htmlFor="g-name">Name</Label>
@@ -296,7 +355,7 @@ export function ManageModal({
                 <div className="space-y-1.5">
                   <Label>Members ({gChars.length} selected)</Label>
                   <div className="flex flex-wrap gap-2">
-                    {characters.map((c) => {
+                    {scopedCharacters.map((c) => {
                       const selected = gChars.includes(c.id);
                       return (
                         <button
@@ -330,14 +389,14 @@ export function ManageModal({
                     </Button>
                   )}
                 </div>
-              </div>
+              </div>)}
             </div>
           ) : (
             <div className="space-y-6">
               {/* Existing characters */}
               <div className="space-y-2">
-                {characters.length === 0 && <p className="text-sm text-muted-foreground">No characters yet.</p>}
-                {characters.map((c) => (
+                {scopedCharacters.length === 0 && <p className="text-sm text-muted-foreground">No characters yet.</p>}
+                {scopedCharacters.map((c) => (
                   <div key={c.id} className="glass rounded-lg p-3 flex items-center gap-3">
                     <Avatar className={`h-10 w-10 ring-2 ring-${c.color}-400/40`}>
                       <AvatarImage src={c.avatar} />
@@ -373,12 +432,13 @@ export function ManageModal({
               </div>
 
               {/* New / edit character form */}
-              <div className="glass rounded-lg p-4 space-y-3 border border-accent/30">
-                <h3 className="text-sm font-semibold text-accent">
-                  {editingCharId ? 'Edit character' : 'Create new character'}
-                </h3>
-                <div className="space-y-1.5">
-                  <Label htmlFor="c-name">Name</Label>
+              {(scopedGroup?.grpType!=="seed") && (
+                <div className="glass rounded-lg p-4 space-y-3 border border-accent/30">
+                  <h3 className="text-sm font-semibold text-accent">
+                    {editingCharId ? 'Edit character' : 'Create new character'}
+                  </h3>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="c-name">Name</Label>
                   <Input id="c-name" value={cName} onChange={(e) => setCName(e.target.value)} placeholder="Character name" className="bg-background/50" />
                 </div>
                 <div className="space-y-1.5">
@@ -443,7 +503,7 @@ export function ManageModal({
                     </Button>
                   )}
                 </div>
-              </div>
+              </div>)}
             </div>
           )}
         </div>

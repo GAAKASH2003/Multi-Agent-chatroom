@@ -375,62 +375,76 @@ const updateGroup = useCallback(
     toast.success('Group deleted', { description: 'The group and its sessions were removed.' });
   }, []);
 
-  const addCharacter = useCallback(
-    (
-      name: string,
-      persona: string,
-      color: Character["color"],
-      traits: string[],
-    ) => {
-      (async () => {
-        const token = localStorage.getItem(AUTH_TOKEN_KEY);
-        if (token) {
-          try {
-            const res = await fetch(`${API_BASE_URL}/character/`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({ name, description: persona, traits }),
-            });
+const addCharacter = useCallback(
+  async (
+    name: string,
+    persona: string,
+    color: Character["color"],
+    traits: string[],
+  ): Promise<Character> => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
 
-            if (res.ok) {
-              const body = await res.json();
-              const created: Character = {
-                id: body.id,
-                name: body.name,
-                avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(body.name)}`,
-                persona: body.description || persona,
-                traits: body.traits || traits,
-                color,
-              };
-              setState((s) => ({
-                ...s,
-                characters: [...s.characters, created],
-              }));
-              return created;
-            }
-          } catch {
-            // fall through to local-only create
-          }
+    if (token) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/character/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name,
+            description: persona,
+            traits,
+          }),
+        });
+
+        if (res.ok) {
+          const body = await res.json();
+
+          const created: Character = {
+            id: body.id,
+            name: body.name,
+            avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(body.name)}`,
+            persona: body.description || persona,
+            traits: body.traits || traits,
+            color,
+          };
+
+          setState((s) => ({
+            ...s,
+            characters: [...s.characters, created],
+          }));
+
+          return created;
         }
+      } catch {
+        // fall through
+      }
+    }
 
-        const character: Character = {
-          id: crypto.randomUUID(),
-          name,
-          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`,
-          persona,
-          traits,
-          color,
-        };
-        setState((s) => ({ ...s, characters: [...s.characters, character] }));
-        toast.success('Character created', { description: `"${name}" joined the roster.` });
-        return character;
-      })();
-    },
-    [],
-  );
+    const created: Character = {
+      id: crypto.randomUUID(),
+      name,
+      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`,
+      persona,
+      traits,
+      color,
+    };
+
+    setState((s) => ({
+      ...s,
+      characters: [...s.characters, created],
+    }));
+
+    toast.success("Character created", {
+      description: `"${name}" joined the roster.`,
+    });
+
+    return created;
+  },
+  []
+);
 
   const updateCharacter = useCallback(
     (
