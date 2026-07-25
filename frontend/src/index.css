@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+
+    --background: 220 20% 7%;
+    --foreground: 210 25% 95%;
+    --card: 220 18% 10%;
+    --card-foreground: 210 25% 95%;
+    --popover: 220 18% 10%;
+    --popover-foreground: 210 25% 95%;
+    --primary: 220 80% 60%;
+    --primary-foreground: 220 20% 98%;
+    --secondary: 220 16% 16%;
+    --secondary-foreground: 210 25% 95%;
+    --muted: 220 16% 14%;
+    --muted-foreground: 220 12% 62%;
+    --accent: 280 70% 65%;
+    --accent-foreground: 220 20% 98%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 16% 18%;
+    --input: 220 16% 18%;
+    --ring: 220 80% 60%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at 15% 20%, hsl(220 80% 60% / 0.05), transparent 40%),
+      radial-gradient(circle at 85% 80%, hsl(280 70% 65% / 0.05), transparent 40%);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .chat-bg {
+    background-color: hsl(220 20% 7%);
+    background-image:
+      radial-gradient(circle at 20% 30%, hsl(220 80% 60% / 0.04), transparent 35%),
+      radial-gradient(circle at 80% 70%, hsl(280 70% 65% / 0.04), transparent 35%);
+  }
+  .scrollbar-neon::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-neon::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-neon::-webkit-scrollbar-thumb {
+    background: hsl(220 16% 28%);
+    border-radius: 9999px;
+  }
+  .scrollbar-neon::-webkit-scrollbar-thumb:hover {
+    background: hsl(220 16% 38%);
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+.typing-dot {
+  animation: typing-bounce 1.2s infinite ease-in-out;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.25s ease-out;
+}
