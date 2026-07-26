@@ -8,8 +8,14 @@ from models.User import User
 from routes import auth_router,group_router,character_router,conversation_router,session_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
- 
-app=FastAPI()
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    connect_db()
+    yield 
+
+app=FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,6 +25,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"message": "Multi-Agent Chatroom API is running"}
+
+
+
 app.include_router(auth_router)
 app.include_router(group_router)
 app.include_router(character_router)
@@ -27,8 +39,8 @@ app.include_router(session_router)
 
 
 
-if __name__ == "__main__":
-    import uvicorn
-    connect_db()
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+# if __name__ == "__main__":
+#     import uvicorn
+#     connect_db()
+#     uvicorn.run("main:app", host="0.0.0.0", port=8000)
 
