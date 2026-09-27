@@ -244,25 +244,3 @@ npm run build
 cd ..
 ```
 
-## Architecture notes
-
-The long-term architecture described in `implementation.md` separates the project into API, service, repository, database, vector-search, and frontend layers. It proposes MongoDB for conversations and metadata, a vector database for semantic search, provider abstraction for LLMs, and additional automated tests. Use that document as the roadmap when extending the currently implemented workflow.
-
-## Security notes
-
-- Replace the example JWT secret before running outside local development.
-- Keep Groq, Google, MongoDB, and vector-database credentials in environment variables.
-- Review and rotate any credentials that may have been used in local experiments.
-- Run the API behind HTTPS and configure production CORS origins before deployment.
-
-## Contributing
-
-1. Create a feature branch.
-2. Make focused changes and update documentation when behavior changes.
-3. Run the frontend type-check, lint, and build commands.
-4. Test backend routes and agent behavior with a configured MongoDB instance.
-5. Open a pull request describing the change and any required environment variables.
-
-## License
-
-No license file is currently included in the repository. Add a license before distributing the project or accepting external contributions under defined terms.
