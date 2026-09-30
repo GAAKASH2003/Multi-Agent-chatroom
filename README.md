@@ -1,6 +1,6 @@
 # Multi-Agent Chatroom
 
-A full-stack AI chatroom where users create groups of custom characters and have natural, multi-character conversations. The application combines a React interface, a FastAPI/MongoDB backend, and a LangGraph workflow that selects the most relevant character, generates an in-character reply, reviews the result, and preserves conversation context.
+In this project users create groups of custom characters and have natural, multi-character conversations. The application combines a React interface, a FastAPI/MongoDB backend, and a LangGraph workflow that selects the most relevant character, generates an in-character reply, reviews the result, and preserves conversation context.
 
 > **Project status:** The repository contains an actively implemented backend and frontend, along with `implementation.md`, which documents planned/scalable architecture such as vector search, additional services, and expanded testing. Some documented features may require further integration before production use.
 
